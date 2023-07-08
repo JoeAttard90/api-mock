@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -42,6 +43,10 @@ func main() {
 					goType = "[]int"
 				case "boolean":
 					goType = "[]bool"
+				case "object":
+					structFieldTypeSlice := strings.Split(prop.Items.Ref, "/")
+					structFieldType := structFieldTypeSlice[len(structFieldTypeSlice)-1]
+					goType = fmt.Sprintf("[]%s", structFieldType)
 				}
 				title := cases.Title(language.English, cases.NoLower)
 				fieldName := title.String(propName)

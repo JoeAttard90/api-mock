@@ -5,6 +5,17 @@ func {{ .Path }}() http.HandlerFunc {
             http.Error(w, "bad request", http.StatusBadRequest)
             return
         }
+        {{ if gt (len .QueryParams) 0 }}
+            urlQuery := r.URL.Query()
+            {{ range .QueryParams }}
+            {{ . }} := urlQuery.Get("{{ . }}")
+            if {{ . }} == "" {
+                log.Printf("missing query parameter %q",  {{ . }})
+                http.Error(w, "bad request", http.StatusBadRequest)
+                return
+            }
+            {{ end }}
+        {{ end }}
 
         {{if eq .Method "POST"}}
         requestBody, err := io.ReadAll(r.Body)
@@ -41,8 +52,6 @@ func {{ .Path }}() http.HandlerFunc {
 
         log.Println({{ .ReqTypeVar }})
         {{end}}
-
-
         w.WriteHeader(http.StatusOK)
     }
 }
