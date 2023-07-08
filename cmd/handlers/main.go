@@ -1,6 +1,7 @@
 package main
 
 import (
+	"api-mock/pkg/utils"
 	"fmt"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -14,9 +15,16 @@ import (
 )
 
 type HandlerInfo struct {
-	Path    string
-	Method  string
-	Handler string
+	Path       string
+	Method     string
+	Handler    string
+	ReqType    string
+	ReqTypeVar string
+}
+
+type Handlers struct {
+	HandlersInfo []HandlerInfo
+	HasPost      bool
 }
 
 func main() {
@@ -26,7 +34,7 @@ func main() {
 		log.Fatalf("Could not load spec: %v", err)
 	}
 
-	var handlers []HandlerInfo
+	var handlers Handlers
 
 	tplFunc, err := template.ParseFiles("templates/handlerFunc.tpl")
 	if err != nil {
@@ -37,12 +45,24 @@ func main() {
 		for method, _ := range pathItem.Operations() {
 			handlerName := fmt.Sprintf("%s%s", cases.Title(language.English, cases.NoLower).String(method), cases.Title(language.English, cases.NoLower).String(path))
 			handlerName = cases.Title(language.English, cases.NoLower).String(handlerName)
-			path = strings.Replace(path, "/", "", -1)
+			cleanPath := strings.Replace(path, "/", "", -1)
 
-			handlerInfo := HandlerInfo{
-				Path:   path,
-				Method: method,
+			var handlerInfo HandlerInfo
+			// TODO: Here if we know it's a post, we just need to add logic to a template to handle psots
+			// => unmarshalling to a known object (model) we have already extracted
+			if method == "POST" {
+				componentStatusOk := pathItem.Post.RequestBody.Value.Content.Get("application/json")
+				pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
+
+				reqType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
+				reqTypeVar := utils.ToCamelCase(reqType)
+				handlerInfo.ReqType = reqType
+				handlerInfo.ReqTypeVar = reqTypeVar
+				handlers.HasPost = true
 			}
+
+			handlerInfo.Path = cleanPath
+			handlerInfo.Method = method
 
 			var handlerBuilder strings.Builder
 			err = tplFunc.Execute(&handlerBuilder, handlerInfo)
@@ -53,7 +73,7 @@ func main() {
 
 			handlerInfo.Handler = handler
 
-			handlers = append(handlers, handlerInfo)
+			handlers.HandlersInfo = append(handlers.HandlersInfo, handlerInfo)
 		}
 	}
 
