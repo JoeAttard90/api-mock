@@ -1,6 +1,7 @@
 package main
 
 import (
+	"api-mock/pkg/handlerutils"
 	"api-mock/pkg/utils"
 	"fmt"
 	"golang.org/x/text/cases"
@@ -15,22 +16,8 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 )
 
-type HandlerInfo struct {
-	Path           string
-	Method         string
-	Handler        string
-	ReqType        string
-	ReqTypeVar     string
-	RespType       string
-	RespTypeVar    string
-	QueryParams    map[string]string
-	SecurityScheme string
-	ReqMimeTypes   []string
-	RespMimeTypes  []string
-}
-
 type Handlers struct {
-	HandlersInfo         []HandlerInfo
+	HandlersInfo         []handlerutils.HandlerInfo
 	HasPost              bool
 	GlobalSecurityScheme string
 }
@@ -63,18 +50,15 @@ func main() {
 			handlers.GlobalSecurityScheme = cases.Title(language.English, cases.NoLower).String(secSchemes[0])
 		}
 
-		for method, _ := range pathItem.Operations() {
-			handlerName := fmt.Sprintf(
-				"%s%s",
-				cases.Title(language.English, cases.NoLower).String(method),
-				cases.Title(language.English, cases.NoLower).String(path),
-			)
-			handlerName = cases.Title(language.English, cases.NoLower).String(handlerName)
-			cleanPath := strings.Replace(path, "/", "", -1)
+		for method := range pathItem.Operations() {
+			handlerName := utils.PathToTitle(path)
+			handlerFunction := utils.ToPascalCase(method)
+			if !strings.HasPrefix(handlerName, handlerFunction) {
+				handlerName = fmt.Sprintf("%s%s", handlerFunction, handlerName)
+			}
 
-			var handlerInfo HandlerInfo
+			var handlerInfo handlerutils.HandlerInfo
 			handlerInfo.QueryParams = make(map[string]string)
-			var componentStatusOk *openapi3.MediaType
 
 			var reqBodyContent openapi3.Content
 			var respBodyContent openapi3.Content
@@ -83,7 +67,7 @@ func main() {
 				reqBody := pathItem.Post.RequestBody
 				if reqBody != nil {
 					reqBodyContent = reqBody.Value.Content
-					for k, _ := range reqBodyContent {
+					for k := range reqBodyContent {
 						if !utils.Contains(handlerInfo.ReqMimeTypes, k) {
 							handlerInfo.ReqMimeTypes = append(handlerInfo.ReqMimeTypes, k)
 						}
@@ -93,33 +77,14 @@ func main() {
 				respOkBody := pathItem.Post.Responses.Get(http.StatusOK)
 				if respOkBody != nil {
 					respBodyContent = respOkBody.Value.Content
-					for k, _ := range respBodyContent {
+					for k := range respBodyContent {
 						if !utils.Contains(handlerInfo.RespMimeTypes, k) {
 							handlerInfo.RespMimeTypes = append(handlerInfo.RespMimeTypes, k)
 						}
 					}
 				}
 
-				// TODO: implement logic to handle other mime types (octet/stream etc...)
-				if handlerInfo.ReqMimeTypes != nil {
-					componentStatusOk = reqBodyContent.Get(handlerInfo.ReqMimeTypes[0])
-					pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
-
-					reqType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
-					reqTypeVar := utils.ToCamelCase(reqType)
-					handlerInfo.ReqType = reqType
-					handlerInfo.ReqTypeVar = reqTypeVar
-				}
-
-				if handlerInfo.RespMimeTypes != nil {
-					componentStatusOk = respBodyContent.Get(handlerInfo.RespMimeTypes[0])
-					pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
-
-					respType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
-					respTypeVar := utils.ToCamelCase(respType)
-					handlerInfo.RespType = respType
-					handlerInfo.RespTypeVar = respTypeVar
-				}
+				handlerInfo.SetReqRespTypes(reqBodyContent, respBodyContent)
 
 				queryParameters := pathItem.Post.Parameters
 				if queryParameters != nil {
@@ -132,7 +97,7 @@ func main() {
 				reqBody := pathItem.Get.RequestBody
 				if reqBody != nil {
 					reqBodyContent = reqBody.Value.Content
-					for k, _ := range reqBodyContent {
+					for k := range reqBodyContent {
 						if !utils.Contains(handlerInfo.ReqMimeTypes, k) {
 							handlerInfo.ReqMimeTypes = append(handlerInfo.ReqMimeTypes, k)
 						}
@@ -142,32 +107,14 @@ func main() {
 				respOkBody := pathItem.Get.Responses.Get(http.StatusOK)
 				if respOkBody != nil {
 					respBodyContent = respOkBody.Value.Content
-					for k, _ := range respBodyContent {
+					for k := range respBodyContent {
 						if !utils.Contains(handlerInfo.RespMimeTypes, k) {
 							handlerInfo.RespMimeTypes = append(handlerInfo.RespMimeTypes, k)
 						}
 					}
 				}
 
-				if handlerInfo.ReqMimeTypes != nil {
-					componentStatusOk = reqBodyContent.Get(handlerInfo.ReqMimeTypes[0])
-					pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
-
-					reqType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
-					reqTypeVar := utils.ToCamelCase(reqType)
-					handlerInfo.ReqType = reqType
-					handlerInfo.ReqTypeVar = reqTypeVar
-				}
-
-				if handlerInfo.RespMimeTypes != nil {
-					componentStatusOk = respBodyContent.Get(handlerInfo.RespMimeTypes[0])
-					pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
-
-					respType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
-					respTypeVar := utils.ToCamelCase(respType)
-					handlerInfo.RespType = respType
-					handlerInfo.RespTypeVar = respTypeVar
-				}
+				handlerInfo.SetReqRespTypes(reqBodyContent, respBodyContent)
 
 				queryParameters := pathItem.Get.Parameters
 				if queryParameters != nil {
@@ -179,7 +126,7 @@ func main() {
 				reqBody := pathItem.Put.RequestBody
 				if reqBody != nil {
 					reqBodyContent = reqBody.Value.Content
-					for k, _ := range reqBodyContent {
+					for k := range reqBodyContent {
 						if !utils.Contains(handlerInfo.ReqMimeTypes, k) {
 							handlerInfo.ReqMimeTypes = append(handlerInfo.ReqMimeTypes, k)
 						}
@@ -189,32 +136,14 @@ func main() {
 				respOkBody := pathItem.Put.Responses.Get(http.StatusOK)
 				if respOkBody != nil {
 					respBodyContent = respOkBody.Value.Content
-					for k, _ := range respBodyContent {
+					for k := range respBodyContent {
 						if !utils.Contains(handlerInfo.RespMimeTypes, k) {
 							handlerInfo.RespMimeTypes = append(handlerInfo.RespMimeTypes, k)
 						}
 					}
 				}
 
-				if handlerInfo.ReqMimeTypes != nil {
-					componentStatusOk = reqBodyContent.Get(handlerInfo.ReqMimeTypes[0])
-					pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
-
-					reqType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
-					reqTypeVar := utils.ToCamelCase(reqType)
-					handlerInfo.ReqType = reqType
-					handlerInfo.ReqTypeVar = reqTypeVar
-				}
-
-				if handlerInfo.RespMimeTypes != nil {
-					componentStatusOk = respBodyContent.Get(handlerInfo.RespMimeTypes[0])
-					pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
-
-					respType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
-					respTypeVar := utils.ToCamelCase(respType)
-					handlerInfo.RespType = respType
-					handlerInfo.RespTypeVar = respTypeVar
-				}
+				handlerInfo.SetReqRespTypes(reqBodyContent, respBodyContent)
 
 				queryParameters := pathItem.Put.Parameters
 				if queryParameters != nil {
@@ -227,7 +156,7 @@ func main() {
 				reqBody := pathItem.Delete.RequestBody
 				if reqBody != nil {
 					reqBodyContent = reqBody.Value.Content
-					for k, _ := range reqBodyContent {
+					for k := range reqBodyContent {
 						if !utils.Contains(handlerInfo.ReqMimeTypes, k) {
 							handlerInfo.ReqMimeTypes = append(handlerInfo.ReqMimeTypes, k)
 						}
@@ -237,32 +166,14 @@ func main() {
 				respOkBody := pathItem.Delete.Responses.Get(http.StatusOK)
 				if respOkBody != nil {
 					respBodyContent = respOkBody.Value.Content
-					for k, _ := range respBodyContent {
+					for k := range respBodyContent {
 						if !utils.Contains(handlerInfo.RespMimeTypes, k) {
 							handlerInfo.RespMimeTypes = append(handlerInfo.RespMimeTypes, k)
 						}
 					}
 				}
 
-				if handlerInfo.ReqMimeTypes != nil {
-					componentStatusOk = reqBodyContent.Get(handlerInfo.ReqMimeTypes[0])
-					pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
-
-					reqType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
-					reqTypeVar := utils.ToCamelCase(reqType)
-					handlerInfo.ReqType = reqType
-					handlerInfo.ReqTypeVar = reqTypeVar
-				}
-
-				if handlerInfo.RespMimeTypes != nil {
-					componentStatusOk = respBodyContent.Get(handlerInfo.RespMimeTypes[0])
-					pathStatusOkSchema := strings.Split(componentStatusOk.Schema.Ref, "/")
-
-					respType := pathStatusOkSchema[len(pathStatusOkSchema)-1]
-					respTypeVar := utils.ToCamelCase(respType)
-					handlerInfo.RespType = respType
-					handlerInfo.RespTypeVar = respTypeVar
-				}
+				handlerInfo.SetReqRespTypes(reqBodyContent, respBodyContent)
 
 				queryParameters := pathItem.Delete.Parameters
 				if queryParameters != nil {
@@ -272,7 +183,7 @@ func main() {
 				}
 			}
 
-			handlerInfo.Path = cases.Title(language.English, cases.NoLower).String(cleanPath)
+			handlerInfo.Path = handlerName
 			handlerInfo.Method = method
 			//TODO: we should check the individual endpoints for security overrides
 			handlerInfo.SecurityScheme = handlers.GlobalSecurityScheme
@@ -303,7 +214,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error creating file: %v", err)
 	}
-	defer f.Close()
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+
+		}
+	}(f)
 
 	err = tpl.Execute(f, handlers)
 	if err != nil {

@@ -33,3 +33,43 @@ func ToCamelCase(str string) string {
 	// Join words together
 	return strings.Join(words, "")
 }
+
+// ToPascalCase converts a string to PascalCase.
+func ToPascalCase(str string) string {
+	words := strings.FieldsFunc(str, func(r rune) bool {
+		// Split string into words on spaces and punctuation
+		return unicode.IsSpace(r) || unicode.IsPunct(r)
+	})
+
+	for i := 0; i < len(words); i++ {
+		// Make each word title case
+		words[i] = cases.Title(language.English, cases.Compact).String(words[i])
+	}
+
+	// Join words together
+	return strings.Join(words, "")
+}
+
+func PathToTitle(s string) string {
+	parts := strings.Split(s, "/")
+	result := ""
+
+	for i := range parts {
+		if parts[i] != "" {
+			if strings.HasPrefix(parts[i], "{") && strings.HasSuffix(parts[i], "}") {
+				// Extract slug name, capitalise it, remove the braces and prefix with 'By'
+				slug := parts[i][1 : len(parts[i])-1] // remove braces
+				slugRune := []rune(slug)
+				slugRune[0] = unicode.ToUpper(slugRune[0]) // make first letter capital
+				slug = string(slugRune)
+				result += "By" + slug // prefix with 'By'
+				continue
+			}
+			r := []rune(parts[i])
+			r[0] = unicode.ToUpper(r[0])
+			result += string(r)
+		}
+	}
+
+	return result
+}

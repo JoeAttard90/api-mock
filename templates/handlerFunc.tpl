@@ -47,7 +47,10 @@ func {{ .Path }}() http.HandlerFunc {
             http.Error(w, "bad request", http.StatusBadRequest)
         }
 
-        w.Write(respBytes)
+        _, err = w.Write(respBytes)
+        if err != nil {
+            return
+        }
         {{end}}
 
         {{if ne .ReqTypeVar "" }}
@@ -58,7 +61,9 @@ func {{ .Path }}() http.HandlerFunc {
             return
         }
 
+        {{if ne .ReqTypeVar .RespTypeVar }}
         var {{ .ReqTypeVar }} models.{{ .ReqType }}
+        {{ end }}
         err = json.Unmarshal(requestBody, &{{ .ReqTypeVar }})
         if err != nil {
             log.Printf("unable to unmarshal request body")
