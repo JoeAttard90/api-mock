@@ -20,7 +20,7 @@ type SchemaInfo struct {
 
 func main() {
 	loader := openapi3.NewLoader()
-	doc, err := loader.LoadFromFile("./exampledocs/scap_api_spec.yaml")
+	doc, err := loader.LoadFromFile("./exampledocs/openapi_pet_store.yaml")
 	if err != nil {
 		log.Fatalf("Could not load spec: %v", err)
 	}
