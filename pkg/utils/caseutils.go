@@ -3,6 +3,7 @@ package utils
 import (
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
+	"regexp"
 	"strings"
 	"unicode"
 )
@@ -72,4 +73,16 @@ func PathToTitle(s string) string {
 	}
 
 	return result
+}
+
+func ExtractSlugs(path string) []string {
+	r := regexp.MustCompile(`\{([^}]*)\}`)
+	matches := r.FindAllStringSubmatch(path, -1)
+
+	var slugs []string
+	for _, match := range matches {
+		slugs = append(slugs, match[1])
+	}
+
+	return slugs
 }

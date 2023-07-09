@@ -18,6 +18,7 @@ type HandlerInfo struct {
 	SecurityScheme string
 	ReqMimeTypes   []string
 	RespMimeTypes  []string
+	Slugs          []string
 }
 
 func (hi *HandlerInfo) SetReqRespTypes(reqBodyContent openapi3.Content, respBodyContent openapi3.Content) {
@@ -40,5 +41,15 @@ func (hi *HandlerInfo) SetReqRespTypes(reqBodyContent openapi3.Content, respBody
 		respTypeVar := utils.ToCamelCase(respType)
 		hi.RespType = respType
 		hi.RespTypeVar = respTypeVar
+	}
+}
+
+func (hi *HandlerInfo) SetQueryParams(parameters openapi3.Parameters) {
+	if parameters != nil {
+		for _, param := range parameters {
+			if param.Value.In == "query" {
+				hi.QueryParams[utils.ToCamelCase(param.Value.Name)] = param.Value.Name
+			}
+		}
 	}
 }

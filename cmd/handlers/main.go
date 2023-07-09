@@ -17,6 +17,7 @@ import (
 )
 
 type Handlers struct {
+	Endpoints            map[string]string
 	HandlersInfo         []handlerutils.HandlerInfo
 	HasPost              bool
 	GlobalSecurityScheme string
@@ -30,6 +31,7 @@ func main() {
 	}
 
 	var handlers Handlers
+	handlers.Endpoints = make(map[string]string)
 
 	tplFunc, err := template.ParseFiles("templates/handlerFunc.tpl")
 	if err != nil {
@@ -37,7 +39,6 @@ func main() {
 	}
 
 	for path, pathItem := range doc.Paths {
-
 		var securitySchemes openapi3.SecuritySchemes
 		var secSchemes []string
 
@@ -59,6 +60,9 @@ func main() {
 
 			var handlerInfo handlerutils.HandlerInfo
 			handlerInfo.QueryParams = make(map[string]string)
+			handlerInfo.Slugs = utils.ExtractSlugs(path)
+
+			handlers.Endpoints[path] = handlerName
 
 			var reqBodyContent openapi3.Content
 			var respBodyContent openapi3.Content
@@ -87,11 +91,7 @@ func main() {
 				handlerInfo.SetReqRespTypes(reqBodyContent, respBodyContent)
 
 				queryParameters := pathItem.Post.Parameters
-				if queryParameters != nil {
-					for _, queryParam := range queryParameters {
-						handlerInfo.QueryParams[utils.ToCamelCase(queryParam.Value.Name)] = queryParam.Value.Name
-					}
-				}
+				handlerInfo.SetQueryParams(queryParameters)
 				handlers.HasPost = true
 			case http.MethodGet:
 				reqBody := pathItem.Get.RequestBody
@@ -117,11 +117,7 @@ func main() {
 				handlerInfo.SetReqRespTypes(reqBodyContent, respBodyContent)
 
 				queryParameters := pathItem.Get.Parameters
-				if queryParameters != nil {
-					for _, queryParam := range queryParameters {
-						handlerInfo.QueryParams[utils.ToCamelCase(queryParam.Value.Name)] = queryParam.Value.Name
-					}
-				}
+				handlerInfo.SetQueryParams(queryParameters)
 			case http.MethodPut:
 				reqBody := pathItem.Put.RequestBody
 				if reqBody != nil {
@@ -146,11 +142,7 @@ func main() {
 				handlerInfo.SetReqRespTypes(reqBodyContent, respBodyContent)
 
 				queryParameters := pathItem.Put.Parameters
-				if queryParameters != nil {
-					for _, queryParam := range queryParameters {
-						handlerInfo.QueryParams[utils.ToCamelCase(queryParam.Value.Name)] = queryParam.Value.Name
-					}
-				}
+				handlerInfo.SetQueryParams(queryParameters)
 				handlers.HasPost = true
 			case http.MethodDelete:
 				reqBody := pathItem.Delete.RequestBody
@@ -176,13 +168,8 @@ func main() {
 				handlerInfo.SetReqRespTypes(reqBodyContent, respBodyContent)
 
 				queryParameters := pathItem.Delete.Parameters
-				if queryParameters != nil {
-					for _, queryParam := range queryParameters {
-						handlerInfo.QueryParams[utils.ToCamelCase(queryParam.Value.Name)] = queryParam.Value.Name
-					}
-				}
+				handlerInfo.SetQueryParams(queryParameters)
 			}
-
 			handlerInfo.Path = handlerName
 			handlerInfo.Method = method
 			//TODO: we should check the individual endpoints for security overrides
@@ -201,6 +188,7 @@ func main() {
 		}
 	}
 
+	// Create Handlers Package
 	tpl, err := template.ParseFiles("./templates/handlers.tpl")
 
 	outputPath := "./pkg/handlers/handlers.go"
@@ -212,7 +200,7 @@ func main() {
 
 	f, err := os.Create(outputPath)
 	if err != nil {
-		log.Fatalf("Error creating file: %v", err)
+		log.Fatalf("Error creating handlers pkg file: %v", err)
 	}
 	defer func(f *os.File) {
 		err := f.Close()
@@ -222,6 +210,32 @@ func main() {
 	}(f)
 
 	err = tpl.Execute(f, handlers)
+	if err != nil {
+		log.Fatalf("Error executing template: %v", err)
+	}
+
+	//Create server main
+	serverTpl, err := template.ParseFiles("./templates/server.tpl")
+
+	serverOutputPath := "./cmd/mockserver/main.go"
+	serverOutputDir := filepath.Dir(serverOutputPath)
+
+	if err := os.MkdirAll(serverOutputDir, os.ModePerm); err != nil {
+		log.Fatalf("Error creating directory: %v", err)
+	}
+
+	file, err := os.Create(serverOutputPath)
+	if err != nil {
+		log.Fatalf("Error creating server main file: %v", err)
+	}
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+
+		}
+	}(file)
+
+	err = serverTpl.Execute(file, handlers)
 	if err != nil {
 		log.Fatalf("Error executing template: %v", err)
 	}

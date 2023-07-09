@@ -9,6 +9,13 @@ func {{ .Path }}() http.HandlerFunc {
         contentType := r.Header.Get("Content-Type")
         {{ end }}
 
+        {{ if ne (len .Slugs) 0 }}
+        vars := mux.Vars(r)
+        {{ range .Slugs }}
+        {{ . }} := vars["{{ . }}"]
+        {{ end }}
+        {{ end }}
+
         {{ if ne .SecurityScheme ""}}
         reqToken := r.Header.Get("Authorization")
         splitToken := strings.Split(reqToken, "{{ .SecurityScheme }}")
