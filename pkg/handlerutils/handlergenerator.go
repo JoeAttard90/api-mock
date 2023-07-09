@@ -1,54 +1,63 @@
-package main
+package handlerutils
 
 import (
-	"api-mock/pkg/handlerutils"
+	"api-mock/pkg/templateutils"
 	"api-mock/pkg/utils"
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"text/template"
-
-	"github.com/getkin/kin-openapi/openapi3"
 )
 
-type Handlers struct {
-	Endpoints            map[string]string
-	HandlersInfo         []handlerutils.HandlerInfo
-	HasPost              bool
-	GlobalSecurityScheme string
+type HandlersGenerator struct {
+	Endpoints               map[string]string
+	HandlersInfo            []HandlerInfo
+	HasPost                 bool
+	GlobalSecurityScheme    string
+	doc                     *openapi3.T
+	handlerFuncTemplatePath string
+	handlerFuncOutputPath   string
+	handlersTemplatePath    string
+	handlersOutputPath      string
+	serverTemplatePath      string
+	serverOutputPath        string
 }
 
-func main() {
-	loader := openapi3.NewLoader()
-	doc, err := loader.LoadFromFile("./exampledocs/openapi_pet_store.yaml")
-	if err != nil {
-		log.Fatalf("Could not load spec: %v", err)
+func NewHandlersGenerator(
+	doc *openapi3.T,
+	handlerFuncTemplatePath,
+	handlersTemplatePath,
+	handlersOutputPath,
+	serverTemplatePath,
+	serverOutputPath string,
+) *HandlersGenerator {
+	endpointsMap := make(map[string]string)
+	return &HandlersGenerator{
+		Endpoints:               endpointsMap,
+		doc:                     doc,
+		handlerFuncTemplatePath: handlerFuncTemplatePath,
+		handlersTemplatePath:    handlersTemplatePath,
+		handlersOutputPath:      handlersOutputPath,
+		serverTemplatePath:      serverTemplatePath,
+		serverOutputPath:        serverOutputPath,
 	}
+}
 
-	var handlers Handlers
-	handlers.Endpoints = make(map[string]string)
-
-	tplFunc, err := template.ParseFiles("templates/handlerFunc.tpl")
-	if err != nil {
-		log.Fatalf("Error creating template: %v", err)
-	}
-
-	for path, pathItem := range doc.Paths {
+func (hg *HandlersGenerator) GenerateHandlers() error {
+	for path, pathItem := range hg.doc.Paths {
 		var securitySchemes openapi3.SecuritySchemes
 		var secSchemes []string
 
-		securitySchemes = doc.Components.SecuritySchemes
+		securitySchemes = hg.doc.Components.SecuritySchemes
 		for _, scheme := range securitySchemes {
 			secSchemes = append(secSchemes, scheme.Value.Scheme)
 		}
 
 		if len(secSchemes) == 1 {
-			handlers.GlobalSecurityScheme = cases.Title(language.English, cases.NoLower).String(secSchemes[0])
+			hg.GlobalSecurityScheme = cases.Title(language.English, cases.NoLower).String(secSchemes[0])
 		}
 
 		for method := range pathItem.Operations() {
@@ -58,11 +67,11 @@ func main() {
 				handlerName = fmt.Sprintf("%s%s", handlerFunction, handlerName)
 			}
 
-			var handlerInfo handlerutils.HandlerInfo
+			var handlerInfo HandlerInfo
 			handlerInfo.QueryParams = make(map[string]string)
 			handlerInfo.Slugs = utils.ExtractSlugs(path)
 
-			handlers.Endpoints[path] = handlerName
+			hg.Endpoints[path] = handlerName
 
 			var reqBodyContent openapi3.Content
 			var respBodyContent openapi3.Content
@@ -72,7 +81,7 @@ func main() {
 				if reqBody != nil {
 					reqBodyContent = reqBody.Value.Content
 					for k := range reqBodyContent {
-						if !utils.Contains(handlerInfo.ReqMimeTypes, k) {
+						if !templateutils.Contains(handlerInfo.ReqMimeTypes, k) {
 							handlerInfo.ReqMimeTypes = append(handlerInfo.ReqMimeTypes, k)
 						}
 					}
@@ -82,7 +91,7 @@ func main() {
 				if respOkBody != nil {
 					respBodyContent = respOkBody.Value.Content
 					for k := range respBodyContent {
-						if !utils.Contains(handlerInfo.RespMimeTypes, k) {
+						if !templateutils.Contains(handlerInfo.RespMimeTypes, k) {
 							handlerInfo.RespMimeTypes = append(handlerInfo.RespMimeTypes, k)
 						}
 					}
@@ -92,13 +101,13 @@ func main() {
 
 				queryParameters := pathItem.Post.Parameters
 				handlerInfo.SetQueryParams(queryParameters)
-				handlers.HasPost = true
+				hg.HasPost = true
 			case http.MethodGet:
 				reqBody := pathItem.Get.RequestBody
 				if reqBody != nil {
 					reqBodyContent = reqBody.Value.Content
 					for k := range reqBodyContent {
-						if !utils.Contains(handlerInfo.ReqMimeTypes, k) {
+						if !templateutils.Contains(handlerInfo.ReqMimeTypes, k) {
 							handlerInfo.ReqMimeTypes = append(handlerInfo.ReqMimeTypes, k)
 						}
 					}
@@ -108,7 +117,7 @@ func main() {
 				if respOkBody != nil {
 					respBodyContent = respOkBody.Value.Content
 					for k := range respBodyContent {
-						if !utils.Contains(handlerInfo.RespMimeTypes, k) {
+						if !templateutils.Contains(handlerInfo.RespMimeTypes, k) {
 							handlerInfo.RespMimeTypes = append(handlerInfo.RespMimeTypes, k)
 						}
 					}
@@ -123,7 +132,7 @@ func main() {
 				if reqBody != nil {
 					reqBodyContent = reqBody.Value.Content
 					for k := range reqBodyContent {
-						if !utils.Contains(handlerInfo.ReqMimeTypes, k) {
+						if !templateutils.Contains(handlerInfo.ReqMimeTypes, k) {
 							handlerInfo.ReqMimeTypes = append(handlerInfo.ReqMimeTypes, k)
 						}
 					}
@@ -133,7 +142,7 @@ func main() {
 				if respOkBody != nil {
 					respBodyContent = respOkBody.Value.Content
 					for k := range respBodyContent {
-						if !utils.Contains(handlerInfo.RespMimeTypes, k) {
+						if !templateutils.Contains(handlerInfo.RespMimeTypes, k) {
 							handlerInfo.RespMimeTypes = append(handlerInfo.RespMimeTypes, k)
 						}
 					}
@@ -143,13 +152,13 @@ func main() {
 
 				queryParameters := pathItem.Put.Parameters
 				handlerInfo.SetQueryParams(queryParameters)
-				handlers.HasPost = true
+				hg.HasPost = true
 			case http.MethodDelete:
 				reqBody := pathItem.Delete.RequestBody
 				if reqBody != nil {
 					reqBodyContent = reqBody.Value.Content
 					for k := range reqBodyContent {
-						if !utils.Contains(handlerInfo.ReqMimeTypes, k) {
+						if !templateutils.Contains(handlerInfo.ReqMimeTypes, k) {
 							handlerInfo.ReqMimeTypes = append(handlerInfo.ReqMimeTypes, k)
 						}
 					}
@@ -159,7 +168,7 @@ func main() {
 				if respOkBody != nil {
 					respBodyContent = respOkBody.Value.Content
 					for k := range respBodyContent {
-						if !utils.Contains(handlerInfo.RespMimeTypes, k) {
+						if !templateutils.Contains(handlerInfo.RespMimeTypes, k) {
 							handlerInfo.RespMimeTypes = append(handlerInfo.RespMimeTypes, k)
 						}
 					}
@@ -173,70 +182,44 @@ func main() {
 			handlerInfo.Path = handlerName
 			handlerInfo.Method = method
 			//TODO: we should check the individual endpoints for security overrides
-			handlerInfo.SecurityScheme = handlers.GlobalSecurityScheme
+			handlerInfo.SecurityScheme = hg.GlobalSecurityScheme
 
+			// Build each handler func
 			var handlerBuilder strings.Builder
+			tplFunc, err := template.ParseFiles(hg.handlerFuncTemplatePath)
+			if err != nil {
+				return err
+			}
+
 			err = tplFunc.Execute(&handlerBuilder, handlerInfo)
 			if err != nil {
-				log.Fatalf("Error executing template: %v", err)
+				return err
 			}
 			handler := handlerBuilder.String()
 
 			handlerInfo.Handler = handler
 
-			handlers.HandlersInfo = append(handlers.HandlersInfo, handlerInfo)
+			hg.HandlersInfo = append(hg.HandlersInfo, handlerInfo)
 		}
 	}
-
-	// Create Handlers Package
-	tpl, err := template.ParseFiles("./templates/handlers.tpl")
-
-	outputPath := "./pkg/handlers/handlers.go"
-	outputDir := filepath.Dir(outputPath)
-
-	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-		log.Fatalf("Error creating directory: %v", err)
-	}
-
-	f, err := os.Create(outputPath)
+	// Create Handlers with all handler funcs
+	err := templateutils.CreateTemplate(
+		hg.handlersTemplatePath,
+		hg.handlersOutputPath,
+		hg,
+	)
 	if err != nil {
-		log.Fatalf("Error creating handlers pkg file: %v", err)
+		return err
 	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-
-		}
-	}(f)
-
-	err = tpl.Execute(f, handlers)
+	// Create Server
+	err = templateutils.CreateTemplate(
+		hg.serverTemplatePath,
+		hg.serverOutputPath,
+		hg,
+	)
 	if err != nil {
-		log.Fatalf("Error executing template: %v", err)
+		return err
 	}
 
-	//Create server main
-	serverTpl, err := template.ParseFiles("./templates/server.tpl")
-
-	serverOutputPath := "./cmd/mockserver/main.go"
-	serverOutputDir := filepath.Dir(serverOutputPath)
-
-	if err := os.MkdirAll(serverOutputDir, os.ModePerm); err != nil {
-		log.Fatalf("Error creating directory: %v", err)
-	}
-
-	file, err := os.Create(serverOutputPath)
-	if err != nil {
-		log.Fatalf("Error creating server main file: %v", err)
-	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-
-		}
-	}(file)
-
-	err = serverTpl.Execute(file, handlers)
-	if err != nil {
-		log.Fatalf("Error executing template: %v", err)
-	}
+	return nil
 }

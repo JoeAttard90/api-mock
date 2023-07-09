@@ -1,4 +1,4 @@
-package utils
+package templateutils
 
 func Contains(s []string, str string) bool {
 	for _, v := range s {

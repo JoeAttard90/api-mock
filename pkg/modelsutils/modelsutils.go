@@ -1,16 +1,11 @@
-package main
+package modelsutils
 
 import (
 	"fmt"
+	"github.com/getkin/kin-openapi/openapi3"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"log"
-	"os"
-	"path/filepath"
 	"strings"
-	"text/template"
-
-	"github.com/getkin/kin-openapi/openapi3"
 )
 
 type SchemaInfo struct {
@@ -18,15 +13,8 @@ type SchemaInfo struct {
 	Fields string
 }
 
-func main() {
-	loader := openapi3.NewLoader()
-	doc, err := loader.LoadFromFile("./exampledocs/openapi_pet_store.yaml")
-	if err != nil {
-		log.Fatalf("Could not load spec: %v", err)
-	}
-
+func GetSchemaInfo(doc *openapi3.T) []SchemaInfo {
 	var schemas []SchemaInfo
-
 	for schemaName, schemaRef := range doc.Components.Schemas {
 		schema := schemaRef.Value
 
@@ -82,34 +70,5 @@ func main() {
 
 		schemas = append(schemas, schemaInfo)
 	}
-
-	const structTpl = `
-package models
-
-{{ range . }}
-type {{ .Name }} {{ .Fields }}
-{{ end }}
-`
-	tpl, err := template.New("structs").Parse(structTpl)
-	if err != nil {
-		log.Fatalf("Error creating template: %v", err)
-	}
-
-	outputPath := "./models/schemas.go"
-	outputDir := filepath.Dir(outputPath)
-
-	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-		log.Fatalf("Error creating directory: %v", err)
-	}
-
-	f, err := os.Create(outputPath)
-	if err != nil {
-		log.Fatalf("Error creating file: %v", err)
-	}
-	defer f.Close()
-
-	err = tpl.Execute(f, schemas)
-	if err != nil {
-		log.Fatalf("Error executing template: %v", err)
-	}
+	return schemas
 }
