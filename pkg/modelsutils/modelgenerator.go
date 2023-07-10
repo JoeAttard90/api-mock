@@ -6,20 +6,24 @@ import (
 )
 
 type ModelGenerator struct {
-	doc *openapi3.T
+	doc          *openapi3.T
+	templatePath string
+	outputPath   string
 }
 
-func NewModelGenerator(doc *openapi3.T) *ModelGenerator {
+func NewModelGenerator(doc *openapi3.T, templatePath, outputPath string) *ModelGenerator {
 	return &ModelGenerator{
-		doc: doc,
+		doc:          doc,
+		templatePath: templatePath,
+		outputPath:   outputPath,
 	}
 }
 
 func (mc *ModelGenerator) GenerateModels() error {
 	schemas := GetSchemaInfo(mc.doc)
 	err := templateutils.CreateTemplate(
-		"templates/models.tpl",
-		"./models/schemas.go",
+		mc.templatePath,
+		mc.outputPath,
 		schemas,
 	)
 	if err != nil {

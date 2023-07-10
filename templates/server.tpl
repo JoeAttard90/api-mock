@@ -1,7 +1,7 @@
 package main
 
 import (
-	"api-mock/pkg/handlers"
+	"api-mock-server/pkg/handlers"
 	"context"
 	"flag"
 	"github.com/gorilla/mux"
@@ -34,6 +34,7 @@ func main() {
 
 	go func() {
 		// Run our server in a goroutine so that it doesn't block.
+		log.Printf("starting server on port %q", *addr)
 		if err := srv.ListenAndServe(); err != nil {
 			log.Fatal(err)
 		}

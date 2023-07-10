@@ -16,6 +16,7 @@ type HandlersGenerator struct {
 	Endpoints               map[string]string
 	HandlersInfo            []HandlerInfo
 	HasPost                 bool
+	HasSlug                 bool
 	GlobalSecurityScheme    string
 	doc                     *openapi3.T
 	handlerFuncTemplatePath string
@@ -70,6 +71,9 @@ func (hg *HandlersGenerator) GenerateHandlers() error {
 			var handlerInfo HandlerInfo
 			handlerInfo.QueryParams = make(map[string]string)
 			handlerInfo.Slugs = utils.ExtractSlugs(path)
+			if len(handlerInfo.Slugs) > 0 {
+				hg.HasSlug = true
+			}
 
 			hg.Endpoints[path] = handlerName
 
@@ -202,6 +206,7 @@ func (hg *HandlersGenerator) GenerateHandlers() error {
 			hg.HandlersInfo = append(hg.HandlersInfo, handlerInfo)
 		}
 	}
+
 	// Create Handlers with all handler funcs
 	err := templateutils.CreateTemplate(
 		hg.handlersTemplatePath,
