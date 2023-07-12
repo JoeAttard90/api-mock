@@ -47,7 +47,7 @@ func (b *Builder) ExecuteCommands() (string, error) {
 	}
 
 	// Go build
-	goBuild := exec.Command("go", "build", "./cmd/mockserver/main.go")
+	goBuild := exec.Command("go", "build", "./cmd/server/main.go")
 	goBuild.Dir = dir
 	_, err = goBuild.Output()
 	if err != nil {

@@ -9,7 +9,9 @@ import (
     "github.com/gorilla/mux"
     {{end}}
     "api-mock-server/pkg/models"
+    {{if ne .GlobalSecurityScheme "" }}
     "strings"
+    {{end}}
 	"log"
 	"net/http"
 )

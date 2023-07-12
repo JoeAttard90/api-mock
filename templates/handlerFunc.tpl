@@ -13,6 +13,7 @@ func {{ .Path }}() http.HandlerFunc {
         vars := mux.Vars(r)
         {{ range .Slugs }}
         {{ . }} := vars["{{ . }}"]
+        log.Printf("received request for {{ . }}, id: %q", {{ . }})
         {{ end }}
         {{ end }}
 
@@ -32,7 +33,7 @@ func {{ .Path }}() http.HandlerFunc {
         {{ range $key, $value := .QueryParams }}
         {{ $key }} := urlQuery.Get("{{ $value }}")
         if {{ $key }} == "" {
-            log.Printf("missing query parameter %q",  {{ $key }})
+            log.Printf("missing query parameter %q",  "{{ $key }}")
             http.Error(w, "bad request", http.StatusBadRequest)
             return
         }
@@ -46,8 +47,29 @@ func {{ .Path }}() http.HandlerFunc {
         }
         {{ end }}
 
-        {{if ne .RespTypeVar "" }}
+        {{if ne .ReqTypeVar "" }}
+        requestBody, err := io.ReadAll(r.Body)
+        if err != nil {
+            log.Printf("unable to read request body: %s", err.Error())
+            http.Error(w, "bad request", http.StatusBadRequest)
+            return
+        }
+
+        var {{ .ReqTypeVar }} models.{{ .ReqType }}
+        err = json.Unmarshal(requestBody, &{{ .ReqTypeVar }})
+        if err != nil {
+            log.Printf("unable to unmarshal request body")
+            http.Error(w, "bad request", http.StatusBadRequest)
+        }
+
+        log.Println({{ .ReqTypeVar }})
+        {{end}}
+
+        {{if and (ne .ReqTypeVar .RespTypeVar) (ne .RespTypeVar "") }}
         var {{ .RespTypeVar }} models.{{ .RespType }}
+        {{ end }}
+        {{if ne .RespTypeVar "" }}
+        {{ .RespTypeVar }}.FakeIt()
         respBytes, err := json.Marshal({{ .RespTypeVar }})
         if err != nil {
             log.Printf("unable to unmarshal request body")
@@ -59,27 +81,8 @@ func {{ .Path }}() http.HandlerFunc {
             return
         }
         {{end}}
-
-        {{if ne .ReqTypeVar "" }}
-        requestBody, err := io.ReadAll(r.Body)
-        if err != nil {
-            log.Printf("unable to read request body: %s", err.Error())
-            http.Error(w, "bad request", http.StatusBadRequest)
-            return
-        }
-
-        {{if ne .ReqTypeVar .RespTypeVar }}
-        var {{ .ReqTypeVar }} models.{{ .ReqType }}
-        {{ end }}
-        err = json.Unmarshal(requestBody, &{{ .ReqTypeVar }})
-        if err != nil {
-            log.Printf("unable to unmarshal request body")
-            http.Error(w, "bad request", http.StatusBadRequest)
-        }
-
-        log.Println({{ .ReqTypeVar }})
-        {{end}}
-
+        {{if eq .RespTypeVar "" }}
         w.WriteHeader(http.StatusOK)
+        {{ end }}
     }
 }
