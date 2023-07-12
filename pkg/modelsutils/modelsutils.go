@@ -50,10 +50,13 @@ func GetSchemaInfo(doc *openapi3.T) []SchemaInfo {
 					goType = "int"
 				case "boolean":
 					goType = "bool"
+				case "object":
+					structFieldTypeSlice := strings.Split(propRef.Ref, "/")
+					structFieldType := structFieldTypeSlice[len(structFieldTypeSlice)-1]
+					goType = fmt.Sprintf("%s", structFieldType)
 				}
-				title := cases.Title(language.English, cases.NoLower)
-				fieldName := title.String(propName)
-				fields = append(fields, fmt.Sprintf("%s %s `json:\"%s\"`", fieldName, goType, propName))
+				title := cases.Title(language.English, cases.NoLower).String(propName)
+				fields = append(fields, fmt.Sprintf("%s %s `json:\"%s\"`", title, goType, propName))
 			}
 		}
 

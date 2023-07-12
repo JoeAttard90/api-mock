@@ -19,7 +19,7 @@ func main() {
 	handlersTemplatePath := flag.String("handlersTemplatePath", "./templates/handlers.tpl", "the path to the template for the handlers")
 	handlersOutputPath := flag.String("handlersOutputPath", "../api-mock-server/pkg/handlers/handlers.go", "the path to output the generated handler funcs")
 	serverTemplatePath := flag.String("serverTemplatePath", "./templates/server.tpl", "the path to the template for the server")
-	serverOutputPath := flag.String("serverOutputPath", "../api-mock-server/cmd/mockserver/main.go", "the path to output the generated server")
+	serverOutputPath := flag.String("serverOutputPath", "../api-mock-server/cmd/server/main.go", "the path to output the generated server")
 
 	// Models
 	modelsTemplatePath := flag.String("modelsTemplatePath", "templates/models.tpl", "the path to the template for the models")
