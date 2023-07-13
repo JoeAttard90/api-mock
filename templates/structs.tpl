@@ -17,7 +17,7 @@ func ({{ .Abbreviation }} *{{ .Name }}) FakeIt() {
     rand.Seed(time.Now().UnixNano())
     {{ range .Fields }}
             {{ if and .IsCustomType .IsSlice }}
-            {{ $abbrev }}.{{ .FieldName }} = getSlice{{ .Type }}(50)
+            {{ $abbrev }}.{{ .FieldName }} = getSlice{{ .Type }}(20)
 
             {{ else if and .IsCustomType (not .IsSlice) }}
             {{ $abbrev }}.{{ .FieldName }}.FakeIt()
