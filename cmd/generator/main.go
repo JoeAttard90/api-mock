@@ -2,6 +2,7 @@ package main
 
 import (
 	"api-mock/pkg/appbuilder"
+	"api-mock/pkg/dockerutils"
 	"api-mock/pkg/handlerutils"
 	"api-mock/pkg/structutils"
 	"flag"
@@ -24,6 +25,13 @@ func main() {
 	// Structs generator flags
 	structsTemplatePath := flag.String("structsTemplatePath", "templates/structs.tpl", "the path to the template for the structs")
 	structsOutputPath := flag.String("structsOutputPath", "../api-mock-server/pkg/structs/schemas.go", "the path to output the generated structs")
+
+	// Docker generator flags
+	dockerfileTemplatePath := flag.String("dockerfileTemplatePath", "./templates/dockerfile.tpl", "the path to the template for the dockerfile")
+	dockerfileOutputPath := flag.String("dockerfileOutputPath", "../api-mock-server/Dockerfile", "the path to output the generated handler funcs")
+	dockerComposeTemplatePath := flag.String("dockerComposeTemplatePath", "./templates/dockerCompose.tpl", "the path to the template for the dockerCompose")
+	dockerComposeOutputPath := flag.String("dockerComposeOutputPath", "../api-mock-server/docker-compose.yml", "the path to output the generated dockerCompose")
+	mockAPIPort := flag.String("mockAPIPort", "8080", "the port on which to expose the generated mock API")
 
 	// Builder
 	dirPath := flag.String("dirPath", "..", "the directory in which to generate the server")
@@ -49,6 +57,13 @@ func main() {
 		*serverTemplatePath,
 		*serverOutputPath,
 	)
+	dockerGenerator := dockerutils.NewDockerFileGenerator(
+		*mockAPIPort,
+		*dockerfileTemplatePath,
+		*dockerfileOutputPath,
+		*dockerComposeTemplatePath,
+		*dockerComposeOutputPath,
+	)
 	builder := appbuilder.NewBuilder(
 		*dirPath,
 		*modName,
@@ -56,12 +71,18 @@ func main() {
 
 	err = structsGenerator.Generate()
 	if err != nil {
-		log.Printf("failed to generate structs for spec: %q", *openAPISpecPath)
+		log.Printf("failed to generate structs for spec: %q :%s", *openAPISpecPath, err.Error())
 		os.Exit(1)
 	}
 	err = handlerGenerator.Generate()
 	if err != nil {
-		log.Printf("failed to generate handlers for spec: %q", *openAPISpecPath)
+		log.Printf("failed to generate handlers for spec: %q :%s", *openAPISpecPath, err.Error())
+		os.Exit(1)
+	}
+
+	err = dockerGenerator.Generate()
+	if err != nil {
+		log.Printf("failed to generate docker files: %s", err.Error())
 		os.Exit(1)
 	}
 
@@ -72,6 +93,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	log.Printf("successfully generated a mock server based on the spec: %q", *openAPISpecPath)
-	log.Printf("mock server location: %q", dir)
+	log.Printf("successfully generated a mock server based on the spec: %q, saved in location: %q", *openAPISpecPath, dir)
+	log.Printf("mock server running in docker container on port %q", *mockAPIPort)
 }
