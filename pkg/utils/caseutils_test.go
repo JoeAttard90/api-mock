@@ -102,3 +102,86 @@ func TestExtractSlugs(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkToCamelCase(b *testing.B) {
+	benchmarks := []struct {
+		name string
+		str  string
+	}{
+		{"Single word", "Test"},
+		{"Multiple words", "test string"},
+		{"Pascal case", "TestCase"},
+		{"Punctuation and spaces", "test-string, for example"},
+		{"Empty string", ""},
+	}
+
+	for _, benchmark := range benchmarks {
+		b.Run(benchmark.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ToCamelCase(benchmark.str)
+			}
+		})
+	}
+}
+
+func BenchmarkToPascalCase(b *testing.B) {
+	benchmarks := []struct {
+		name string
+		str  string
+	}{
+		{"Short String", "hello"},
+		{"Long String", "hello_thisIsAString_withDifferent_cases"},
+		{"String With Punctuation", "hello, world!"},
+		{"Mixed Case String", "HelloWorld"},
+		{"Empty String", ""},
+	}
+
+	for _, benchmark := range benchmarks {
+		b.Run(benchmark.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ToPascalCase(benchmark.str)
+			}
+		})
+	}
+}
+
+func BenchmarkPathToTitle(b *testing.B) {
+	benchmarks := []struct {
+		name string
+		path string
+	}{
+		{"Short path", "/hello"},
+		{"Long path", "/hello/thisIsAPath/withDifferent/segments"},
+		{"Path with slugs", "/hello/{slug}/world/{anotherSlug}"},
+		{"Empty path", ""},
+	}
+
+	for _, benchmark := range benchmarks {
+		b.Run(benchmark.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				PathToTitle(benchmark.path)
+			}
+		})
+	}
+}
+
+func BenchmarkExtractSlugs(b *testing.B) {
+	benchmarks := []struct {
+		name string
+		path string
+	}{
+		{"No slugs", "/path/without/any/slugs"},
+		{"One slug", "/path/with/{one}Slug"},
+		{"Multiple slugs", "/path/with/{multiple}/{different}/{slugs}"},
+		{"Slug only", "{slug}"},
+		{"Empty path", ""},
+	}
+
+	for _, benchmark := range benchmarks {
+		b.Run(benchmark.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				ExtractSlugs(benchmark.path)
+			}
+		})
+	}
+}
