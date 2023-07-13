@@ -37,8 +37,12 @@ func ToCamelCase(str string) string {
 
 // ToPascalCase converts a string to PascalCase.
 func ToPascalCase(str string) string {
+	// Use regular expressions to identify where to split the string
+	var re = regexp.MustCompile(`([a-z])([A-Z])`)
+	str = re.ReplaceAllString(str, `$1 $2`)
+
 	words := strings.FieldsFunc(str, func(r rune) bool {
-		// Split string into words on spaces and punctuation
+		// Split string into words on spaces, underscores and punctuation
 		return unicode.IsSpace(r) || unicode.IsPunct(r)
 	})
 
@@ -51,6 +55,7 @@ func ToPascalCase(str string) string {
 	return strings.Join(words, "")
 }
 
+// PathToTitle takes a path-style string as input and transforms it into a title-style string.
 func PathToTitle(s string) string {
 	parts := strings.Split(s, "/")
 	result := ""
@@ -75,6 +80,7 @@ func PathToTitle(s string) string {
 	return result
 }
 
+// ExtractSlugs extracts slugs from the provided path and returns them in a []string
 func ExtractSlugs(path string) []string {
 	r := regexp.MustCompile(`\{([^}]*)\}`)
 	matches := r.FindAllStringSubmatch(path, -1)

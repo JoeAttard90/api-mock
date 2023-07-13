@@ -1,4 +1,4 @@
-package modelsutils
+package structutils
 
 import (
 	"fmt"

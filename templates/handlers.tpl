@@ -8,7 +8,7 @@ import (
     {{if eq .HasSlug true}}
     "github.com/gorilla/mux"
     {{end}}
-    "api-mock-server/pkg/models"
+    "api-mock-server/pkg/structs"
     {{if ne .GlobalSecurityScheme "" }}
     "strings"
     {{end}}

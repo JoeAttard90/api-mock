@@ -3,7 +3,7 @@ package main
 import (
 	"api-mock/pkg/appbuilder"
 	"api-mock/pkg/handlerutils"
-	"api-mock/pkg/modelsutils"
+	"api-mock/pkg/structutils"
 	"flag"
 	"github.com/getkin/kin-openapi/openapi3"
 	"log"
@@ -12,18 +12,18 @@ import (
 
 func main() {
 	// Source openapi spec
-	openAPISpecPath := flag.String("openAPISpecPath", "./exampledocs/scap_api_spec.yaml", "the path to the open api spec file")
+	openAPISpecPath := flag.String("openAPISpecPath", "./exampledocs/openapi_pet_store.yaml", "the path to the open api spec file")
 
-	// Server and Handler
+	// Server and Handler generator flags
 	handlerFuncTemplatePath := flag.String("handlerFuncTemplatePath", "templates/handlerFunc.tpl", "the path to the template for the handler funcs")
 	handlersTemplatePath := flag.String("handlersTemplatePath", "./templates/handlers.tpl", "the path to the template for the handlers")
 	handlersOutputPath := flag.String("handlersOutputPath", "../api-mock-server/pkg/handlers/handlers.go", "the path to output the generated handler funcs")
 	serverTemplatePath := flag.String("serverTemplatePath", "./templates/server.tpl", "the path to the template for the server")
 	serverOutputPath := flag.String("serverOutputPath", "../api-mock-server/cmd/server/main.go", "the path to output the generated server")
 
-	// Models
-	modelsTemplatePath := flag.String("modelsTemplatePath", "templates/models.tpl", "the path to the template for the models")
-	modelsOutputPath := flag.String("modelsOutputPath", "../api-mock-server/pkg/models/schemas.go", "the path to output the generated models")
+	// Structs generator flags
+	structsTemplatePath := flag.String("structsTemplatePath", "templates/structs.tpl", "the path to the template for the structs")
+	structsOutputPath := flag.String("structsOutputPath", "../api-mock-server/pkg/structs/schemas.go", "the path to output the generated structs")
 
 	// Builder
 	dirPath := flag.String("dirPath", "..", "the directory in which to generate the server")
@@ -36,10 +36,10 @@ func main() {
 	if err != nil {
 		log.Printf("could not load from file: %q - %s", *openAPISpecPath, err.Error())
 	}
-	modelGenerator := modelsutils.NewModelGenerator(
+	structsGenerator := structutils.NewStructsGenerator(
 		doc,
-		*modelsTemplatePath,
-		*modelsOutputPath,
+		*structsTemplatePath,
+		*structsOutputPath,
 	)
 	handlerGenerator := handlerutils.NewHandlersGenerator(
 		doc,
@@ -54,12 +54,12 @@ func main() {
 		*modName,
 	)
 
-	err = modelGenerator.GenerateModels()
+	err = structsGenerator.Generate()
 	if err != nil {
-		log.Printf("failed to generate models for spec: %q", *openAPISpecPath)
+		log.Printf("failed to generate structs for spec: %q", *openAPISpecPath)
 		os.Exit(1)
 	}
-	err = handlerGenerator.GenerateHandlers()
+	err = handlerGenerator.Generate()
 	if err != nil {
 		log.Printf("failed to generate handlers for spec: %q", *openAPISpecPath)
 		os.Exit(1)

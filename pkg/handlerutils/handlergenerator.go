@@ -47,7 +47,7 @@ func NewHandlersGenerator(
 	}
 }
 
-func (hg *HandlersGenerator) GenerateHandlers() error {
+func (hg *HandlersGenerator) Generate() error {
 	for path, pathItem := range hg.doc.Paths {
 		var securitySchemes openapi3.SecuritySchemes
 		var secSchemes []string

@@ -55,7 +55,7 @@ func {{ .Path }}() http.HandlerFunc {
             return
         }
 
-        var {{ .ReqTypeVar }} models.{{ .ReqType }}
+        var {{ .ReqTypeVar }} structs.{{ .ReqType }}
         err = json.Unmarshal(requestBody, &{{ .ReqTypeVar }})
         if err != nil {
             log.Printf("unable to unmarshal request body")
@@ -66,7 +66,7 @@ func {{ .Path }}() http.HandlerFunc {
         {{end}}
 
         {{if and (ne .ReqTypeVar .RespTypeVar) (ne .RespTypeVar "") }}
-        var {{ .RespTypeVar }} models.{{ .RespType }}
+        var {{ .RespTypeVar }} structs.{{ .RespType }}
         {{ end }}
         {{if ne .RespTypeVar "" }}
         {{ .RespTypeVar }}.FakeIt()

@@ -1,4 +1,4 @@
-package modelsutils
+package structutils
 
 import (
 	"api-mock/pkg/templateutils"
@@ -11,7 +11,7 @@ type ModelGenerator struct {
 	outputPath   string
 }
 
-func NewModelGenerator(doc *openapi3.T, templatePath, outputPath string) *ModelGenerator {
+func NewStructsGenerator(doc *openapi3.T, templatePath, outputPath string) *ModelGenerator {
 	return &ModelGenerator{
 		doc:          doc,
 		templatePath: templatePath,
@@ -19,7 +19,7 @@ func NewModelGenerator(doc *openapi3.T, templatePath, outputPath string) *ModelG
 	}
 }
 
-func (mc *ModelGenerator) GenerateModels() error {
+func (mc *ModelGenerator) Generate() error {
 	schemas := GetSchemaInfo(mc.doc)
 	err := templateutils.CreateTemplate(
 		mc.templatePath,
