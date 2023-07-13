@@ -9,11 +9,14 @@ import (
     "github.com/gorilla/mux"
     {{end}}
     "api-mock-server/pkg/structs"
+	"log"
+	"net/http"
+	{{if ne .StaticResponses ""}}
+	"os"
+    {{end}}
     {{if ne .GlobalSecurityScheme "" }}
     "strings"
     {{end}}
-	"log"
-	"net/http"
 )
 
 {{ range .HandlersInfo }}

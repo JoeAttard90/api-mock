@@ -64,23 +64,43 @@ func {{ .Path }}() http.HandlerFunc {
 
         log.Println({{ .ReqTypeVar }})
         {{end}}
+        {{ if ne .StaticResponsePath "" }}
+        file, err := os.Open("{{ .StaticResponsePath }}")
+        if err != nil {
+            log.Printf("failed to open file: %v", err)
+            http.Error(w, "internal server error", http.StatusInternalServerError)
+            return
+        }
+        defer file.Close()
 
-        {{if and (ne .ReqTypeVar .RespTypeVar) (ne .RespTypeVar "") }}
+        // Read file content
+        respBytes, err := io.ReadAll(file)
+        if err != nil {
+            log.Printf("failed to read file: %v", err)
+            http.Error(w, "internal server error", http.StatusInternalServerError)
+            return
+        }
+        {{ else if and (ne .ReqTypeVar .RespTypeVar) (ne .RespTypeVar "") (eq .StaticResponsePath "") }}
         var {{ .RespTypeVar }} structs.{{ .RespType }}
-        {{ end }}
+
         {{if ne .RespTypeVar "" }}
         {{ .RespTypeVar }}.FakeIt()
         respBytes, err := json.Marshal({{ .RespTypeVar }})
         if err != nil {
-            log.Printf("unable to unmarshal request body")
+            log.Printf("unable to marshal response body")
             http.Error(w, "bad request", http.StatusBadRequest)
-        }
-
-        _, err = w.Write(respBytes)
-        if err != nil {
             return
         }
-        {{end}}
+        {{ end }}
+        {{ end }}
+        {{ if or (ne .RespTypeVar "") (ne .StaticResponsePath "") }}
+        _, err = w.Write(respBytes)
+        if err != nil {
+            log.Printf("error writing response body")
+            return
+        }
+        {{ end }}
+
         {{if eq .RespTypeVar "" }}
         w.WriteHeader(http.StatusOK)
         {{ end }}

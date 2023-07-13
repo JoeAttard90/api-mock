@@ -21,6 +21,7 @@ func main() {
 	handlersOutputPath := flag.String("handlersOutputPath", "../api-mock-server/pkg/handlers/handlers.go", "the path to output the generated handler funcs")
 	serverTemplatePath := flag.String("serverTemplatePath", "./templates/server.tpl", "the path to the template for the server")
 	serverOutputPath := flag.String("serverOutputPath", "../api-mock-server/cmd/server/main.go", "the path to output the generated server")
+	staticResponses := flag.String("staticResponses", "", "the path to static responses (named the same as the endpoints) to be used for specified endpoints")
 
 	// Structs generator flags
 	structsTemplatePath := flag.String("structsTemplatePath", "templates/structs.tpl", "the path to the template for the structs")
@@ -56,6 +57,7 @@ func main() {
 		*handlersOutputPath,
 		*serverTemplatePath,
 		*serverOutputPath,
+		*staticResponses,
 	)
 	dockerGenerator := dockerutils.NewDockerFileGenerator(
 		*mockAPIPort,
@@ -67,6 +69,7 @@ func main() {
 	builder := appbuilder.NewBuilder(
 		*dirPath,
 		*modName,
+		*staticResponses,
 	)
 
 	err = structsGenerator.Generate()

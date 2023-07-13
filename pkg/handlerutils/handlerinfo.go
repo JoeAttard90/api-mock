@@ -7,18 +7,19 @@ import (
 )
 
 type HandlerInfo struct {
-	Path           string
-	Method         string
-	Handler        string
-	ReqType        string
-	ReqTypeVar     string
-	RespType       string
-	RespTypeVar    string
-	QueryParams    map[string]string
-	SecurityScheme string
-	ReqMimeTypes   []string
-	RespMimeTypes  []string
-	Slugs          []string
+	Path               string
+	Method             string
+	Handler            string
+	ReqType            string
+	ReqTypeVar         string
+	RespType           string
+	RespTypeVar        string
+	QueryParams        map[string]string
+	SecurityScheme     string
+	ReqMimeTypes       []string
+	RespMimeTypes      []string
+	Slugs              []string
+	StaticResponsePath string
 }
 
 func (hi *HandlerInfo) SetReqRespTypes(reqBodyContent openapi3.Content, respBodyContent openapi3.Content) {

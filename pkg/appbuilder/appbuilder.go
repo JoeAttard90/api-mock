@@ -2,28 +2,42 @@ package appbuilder
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 )
 
 type Builder struct {
-	dirPath string
-	modName string
+	dirPath            string
+	modName            string
+	staticResponsePath string
 }
 
-func NewBuilder(dirPath, modName string) *Builder {
+func NewBuilder(dirPath, modName, staticResponsePath string) *Builder {
 	return &Builder{
-		dirPath: dirPath,
-		modName: modName,
+		dirPath:            dirPath,
+		modName:            modName,
+		staticResponsePath: staticResponsePath,
 	}
 }
+
+const examplesDir = "exampledocs/staticresponses"
 
 func (b *Builder) ExecuteCommands() (string, error) {
 	dir := filepath.Join(b.dirPath, b.modName)
 	log.Printf("building the mock api in %s", dir)
 
-	// Command 1: go mod init
+	// Copy the directory
+	if b.staticResponsePath != "" {
+		err := copyDir(b.staticResponsePath, fmt.Sprintf("%s/%s", dir, examplesDir))
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// go mod init
 	log.Println("initialising the go package")
 	goModInit := exec.Command("go", "mod", "init", b.modName)
 	goModInit.Dir = dir
@@ -32,8 +46,8 @@ func (b *Builder) ExecuteCommands() (string, error) {
 		return "", fmt.Errorf("failed to initialize module: %w", err)
 	}
 
-	// Command 2: go mod tidy
-	log.Println("fetching dependencies")
+	// go mod tidy
+	log.Println("running go mod tidy")
 	goModTidy := exec.Command("go", "mod", "tidy")
 	goModTidy.Dir = dir
 	_, err = goModTidy.Output()
@@ -69,4 +83,73 @@ func (b *Builder) ExecuteCommands() (string, error) {
 		return "", fmt.Errorf("failed to build the docker image(s): %w", err)
 	}
 	return dir, nil
+}
+
+func copyDir(src string, dst string) error {
+	src = filepath.Clean(src)
+	dst = filepath.Clean(dst)
+
+	sStat, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if !sStat.IsDir() {
+		return fmt.Errorf("source is not a directory")
+	}
+
+	_, err = os.Stat(dst)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	// Make sure destination directory exists
+	err = os.MkdirAll(dst, sStat.Mode())
+	if err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			err = copyDir(srcPath, dstPath)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = copyFile(srcPath, dstPath)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func copyFile(srcFile string, dstFile string) error {
+	out, err := os.Create(dstFile)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	in, err := os.Open(srcFile)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

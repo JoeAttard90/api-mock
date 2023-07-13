@@ -18,6 +18,7 @@ type HandlersGenerator struct {
 	HasPost                 bool
 	HasSlug                 bool
 	GlobalSecurityScheme    string
+	StaticResponses         string
 	doc                     *openapi3.T
 	handlerFuncTemplatePath string
 	handlerFuncOutputPath   string
@@ -33,7 +34,8 @@ func NewHandlersGenerator(
 	handlersTemplatePath,
 	handlersOutputPath,
 	serverTemplatePath,
-	serverOutputPath string,
+	serverOutputPath,
+	staticResponses string,
 ) *HandlersGenerator {
 	endpointsMap := make(map[string]string)
 	return &HandlersGenerator{
@@ -44,6 +46,7 @@ func NewHandlersGenerator(
 		handlersOutputPath:      handlersOutputPath,
 		serverTemplatePath:      serverTemplatePath,
 		serverOutputPath:        serverOutputPath,
+		StaticResponses:         staticResponses,
 	}
 }
 
@@ -76,6 +79,13 @@ func (hg *HandlersGenerator) Generate() error {
 			}
 
 			hg.Endpoints[path] = handlerName
+			if hg.StaticResponses != "" {
+				staticRespFile, err := utils.FindFile(hg.StaticResponses, handlerName)
+				if err != nil {
+					return err
+				}
+				handlerInfo.StaticResponsePath = staticRespFile
+			}
 
 			var reqBodyContent openapi3.Content
 			var respBodyContent openapi3.Content
