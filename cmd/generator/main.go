@@ -45,7 +45,7 @@ func main() {
 	if err != nil {
 		log.Printf("could not load from file: %q - %s", *openAPISpecPath, err.Error())
 	}
-	structsGenerator := structutils.NewStructsGenerator(
+	structsGenerator := structutils.NewStructsGenerato(
 		doc,
 		*structsTemplatePath,
 		*structsOutputPath,
