@@ -28,6 +28,7 @@ func main() {
 	structsOutputPath := flag.String("structsOutputPath", "../api-mock-server/pkg/structs/schemas.go", "the path to output the generated structs")
 
 	// Docker generator flags
+	dockerRun := flag.Bool("dockerRun", false, "spin up mock api in docker container")
 	dockerfileTemplatePath := flag.String("dockerfileTemplatePath", "./templates/dockerfile.tpl", "the path to the template for the dockerfile")
 	dockerfileOutputPath := flag.String("dockerfileOutputPath", "../api-mock-server/Dockerfile", "the path to output the generated handler funcs")
 	dockerComposeTemplatePath := flag.String("dockerComposeTemplatePath", "./templates/dockerCompose.tpl", "the path to the template for the dockerCompose")
@@ -83,19 +84,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = dockerGenerator.Generate()
-	if err != nil {
-		log.Printf("failed to generate docker files: %s", err.Error())
-		os.Exit(1)
+	if *dockerRun {
+		err = dockerGenerator.Generate()
+		if err != nil {
+			log.Printf("failed to generate docker files: %s", err.Error())
+			os.Exit(1)
+		}
 	}
 
 	// TODO: update the execute command to first check if the module exists, if so delete all then re-build
-	dir, err := builder.ExecuteCommands()
+	dir, err := builder.ExecuteCommands(*dockerRun)
 	if err != nil {
 		log.Printf("failed to execute commands during generation: %s", err.Error())
 		os.Exit(1)
 	}
 
 	log.Printf("successfully generated a mock server based on the spec: %q, saved in location: %q", *openAPISpecPath, dir)
-	log.Printf("mock server running in docker container on port %q", *mockAPIPort)
+	if *dockerRun {
+		log.Printf("mock server running in docker container on port %q", *mockAPIPort)
+	}
 }
