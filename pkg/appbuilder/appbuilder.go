@@ -25,7 +25,7 @@ func NewBuilder(dirPath, modName, staticResponsePath string) *Builder {
 
 const examplesDir = "exampledocs/staticresponses"
 
-func (b *Builder) ExecuteCommands() (string, error) {
+func (b *Builder) ExecuteCommands(dockerRun bool) (string, error) {
 	dir := filepath.Join(b.dirPath, b.modName)
 	log.Printf("building the mock api in %s", dir)
 
@@ -75,13 +75,16 @@ func (b *Builder) ExecuteCommands() (string, error) {
 	}
 
 	// Docker compose up
-	log.Println("spinning up mock-api-server in docker container")
-	dockerComposeUp := exec.Command("docker-compose", "up", "-d", "--build")
-	dockerComposeUp.Dir = dir
-	_, err = dockerComposeUp.Output()
-	if err != nil {
-		return "", fmt.Errorf("failed to build the docker image(s): %w", err)
+	if dockerRun {
+		log.Println("spinning up mock-api-server in docker container")
+		dockerComposeUp := exec.Command("docker-compose", "up", "-d", "--build")
+		dockerComposeUp.Dir = dir
+		_, err = dockerComposeUp.Output()
+		if err != nil {
+			return "", fmt.Errorf("failed to build the docker image(s): %w", err)
+		}
 	}
+
 	return dir, nil
 }
 
@@ -138,13 +141,23 @@ func copyFile(srcFile string, dstFile string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func(out *os.File) {
+		err := out.Close()
+		if err != nil {
+
+		}
+	}(out)
 
 	in, err := os.Open(srcFile)
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func(in *os.File) {
+		err := in.Close()
+		if err != nil {
+
+		}
+	}(in)
 
 	_, err = io.Copy(out, in)
 	if err != nil {
