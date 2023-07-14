@@ -23,7 +23,7 @@ The application uses the following program args/flags:
 - `staticResponses` - Path to static responses (named the same as the endpoints) to be used for specified endpoints
 - `structsTemplatePath` - Path to the template for the structs
 - `structsOutputPath` - Path to output the generated structs
-- `dockerRun` = Spins up generated mock API in docker container
+- `dockerRun` - Spins up generated mock API in docker container
 - `dockerfileTemplatePath` - Path to the template for the Dockerfile
 - `dockerfileOutputPath` - Path to output the generated Dockerfile
 - `dockerComposeTemplatePath` - Path to the template for Docker Compose file
