@@ -23,3 +23,25 @@ import (
 {{ .Handler }}
 {{ end }}
 
+{{ range $endpoint, $methods := .Methods }}
+type {{ parseEndpoint $endpoint }}Struct struct {
+	{{ range $method := $methods }}
+        {{ range $k, $v := $method }}
+            {{ $k }} http.HandlerFunc
+        {{ end }}
+    {{ end }}
+}
+func (h *{{parseEndpoint $endpoint}}Struct) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    switch r.Method {
+    {{ range $method := $methods }}
+        {{ range $k, $v := $method }}
+            case "{{ $k }}":
+            if h.{{ $k }} != nil {
+                h.{{ $k }}.ServeHTTP(w, r)
+            }
+        {{ end }}{{ end }}
+    default:
+        http.Error(w, "Method not supported", http.StatusMethodNotAllowed)
+    }
+}
+{{ end }}

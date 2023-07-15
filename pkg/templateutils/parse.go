@@ -1,6 +1,7 @@
 package templateutils
 
 import (
+	"api-mock/pkg/utils"
 	"log"
 	"os"
 	"path/filepath"
@@ -8,7 +9,13 @@ import (
 )
 
 func CreateTemplate(templatePath, outputPath string, data any) error {
-	tpl, err := template.ParseFiles(templatePath)
+	tpl := template.New(filepath.Base(templatePath)).Funcs(
+		template.FuncMap{
+			"parseEndpoint": ParseEndpoint,
+			"pathToHandler": utils.PathToTitle,
+			"toPascal":      utils.ToPascalCase,
+		})
+	tpl, err := tpl.ParseFiles(templatePath)
 	if err != nil {
 		return err
 	}

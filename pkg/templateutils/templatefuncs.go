@@ -29,5 +29,5 @@ func ParseEndpoint(endpoint string) string {
 		}
 	}
 
-	return handler + "Handler"
+	return handler
 }

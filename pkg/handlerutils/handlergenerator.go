@@ -226,6 +226,7 @@ func (hg *HandlersGenerator) Generate() error {
 	}
 
 	// Create Handlers with all handler funcs
+
 	err := templateutils.CreateTemplate(
 		hg.handlersTemplatePath,
 		hg.handlersOutputPath,
