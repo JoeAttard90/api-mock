@@ -14,8 +14,7 @@ func {{ .Path }}() http.HandlerFunc {
         {{ range .Slugs }}
         {{ . }} := vars["{{ . }}"]
         log.Printf("received request for {{ . }}, id: %q", {{ . }})
-        {{ end }}
-        {{ end }}
+        {{ end }} {{ end }}
 
         {{ if ne .SecurityScheme ""}}
         reqToken := r.Header.Get("Authorization")
@@ -26,7 +25,6 @@ func {{ .Path }}() http.HandlerFunc {
             return
         }
         {{ end }}
-
         {{ if gt (len .QueryParams) 0 }}
         urlQuery := r.URL.Query()
 
@@ -37,10 +35,7 @@ func {{ .Path }}() http.HandlerFunc {
             http.Error(w, "bad request", http.StatusBadRequest)
             return
         }
-        {{ end }}
-
-        {{ end }}
-
+        {{ end }} {{ end }}
         {{ range .ReqMimeTypes }}
         if contentType == "{{ . }}" {
             log.Printf("Received {{ . }} data")
@@ -60,10 +55,13 @@ func {{ .Path }}() http.HandlerFunc {
         if err != nil {
             log.Printf("unable to unmarshal request body")
             http.Error(w, "bad request", http.StatusBadRequest)
+            return
         }
 
         log.Println({{ .ReqTypeVar }})
         {{end}}
+
+        {{ if and (ne .RespTypeVar "") (ne .RespType "") (ne .RespType .ReqType)}} var {{ .RespTypeVar }} structs.{{ .RespType }} {{end}}
         {{ if ne .StaticResponsePath "" }}
         file, err := os.Open("{{ .StaticResponsePath }}")
         if err != nil {
@@ -71,7 +69,12 @@ func {{ .Path }}() http.HandlerFunc {
             http.Error(w, "internal server error", http.StatusInternalServerError)
             return
         }
-        defer file.Close()
+        defer func(file *os.File) {
+            err := file.Close()
+            if err != nil {
+                log.Printf("could not close file %q: %s", file.Name(), err.Error())
+            }
+        }(file)
 
         // Read file content
         respBytes, err := io.ReadAll(file)
@@ -80,10 +83,15 @@ func {{ .Path }}() http.HandlerFunc {
             http.Error(w, "internal server error", http.StatusInternalServerError)
             return
         }
-        {{ else if and (ne .ReqTypeVar .RespTypeVar) (ne .RespTypeVar "") (eq .StaticResponsePath "") }}
-        var {{ .RespTypeVar }} structs.{{ .RespType }}
 
-        {{if ne .RespTypeVar "" }}
+        // Check the example provided matches the specs (generated structs)
+        err = json.Unmarshal(respBytes, &{{ .RespTypeVar }})
+        if err != nil {
+            log.Printf("unable to unmarshal request body")
+            http.Error(w, "bad request", http.StatusBadRequest)
+            return
+        }
+        {{ else if and (ne .RespTypeVar "") (eq .StaticResponsePath "") }}
         {{ .RespTypeVar }}.FakeIt()
         respBytes, err := json.Marshal({{ .RespTypeVar }})
         if err != nil {
@@ -91,7 +99,6 @@ func {{ .Path }}() http.HandlerFunc {
             http.Error(w, "bad request", http.StatusBadRequest)
             return
         }
-        {{ end }}
         {{ end }}
         {{ if or (ne .RespTypeVar "") (ne .StaticResponsePath "") }}
         _, err = w.Write(respBytes)

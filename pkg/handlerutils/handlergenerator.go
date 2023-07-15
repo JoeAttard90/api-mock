@@ -19,6 +19,7 @@ type HandlersGenerator struct {
 	HasSlug                 bool
 	GlobalSecurityScheme    string
 	StaticResponses         string
+	Methods                 map[string][]map[string]string
 	doc                     *openapi3.T
 	handlerFuncTemplatePath string
 	handlerFuncOutputPath   string
@@ -38,8 +39,10 @@ func NewHandlersGenerator(
 	staticResponses string,
 ) *HandlersGenerator {
 	endpointsMap := make(map[string]string)
+	methodsMap := make(map[string][]map[string]string)
 	return &HandlersGenerator{
 		Endpoints:               endpointsMap,
+		Methods:                 methodsMap,
 		doc:                     doc,
 		handlerFuncTemplatePath: handlerFuncTemplatePath,
 		handlersTemplatePath:    handlersTemplatePath,
@@ -78,6 +81,11 @@ func (hg *HandlersGenerator) Generate() error {
 				hg.HasSlug = true
 			}
 
+			_, ok := hg.Endpoints[path]
+			if ok {
+				methodMap := map[string]string{method: handlerName}
+				hg.Methods[path] = append(hg.Methods[path], methodMap)
+			}
 			hg.Endpoints[path] = handlerName
 			if hg.StaticResponses != "" {
 				staticRespFile, err := utils.FindFile(hg.StaticResponses, handlerName)

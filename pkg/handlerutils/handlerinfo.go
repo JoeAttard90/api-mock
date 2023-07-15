@@ -15,6 +15,7 @@ type HandlerInfo struct {
 	RespType           string
 	RespTypeVar        string
 	QueryParams        map[string]string
+	Methods            map[string]string
 	SecurityScheme     string
 	ReqMimeTypes       []string
 	RespMimeTypes      []string
