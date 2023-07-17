@@ -87,7 +87,7 @@ func {{ .Path }}() http.HandlerFunc {
         // Check the example provided matches the specs (generated structs)
         err = json.Unmarshal(respBytes, &{{ .RespTypeVar }})
         if err != nil {
-            log.Printf("unable to unmarshal request body")
+            log.Printf("unable to unmarshal response body")
             http.Error(w, "bad request", http.StatusBadRequest)
             return
         }
