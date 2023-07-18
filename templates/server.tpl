@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-    addr := flag.String("addr", ":8080", "the port on which to expose the server")
+    addr := flag.String("addr", "{{ .ServerAddr }}", "the port on which to expose the server")
     flag.Parse()
 
     r := mux.NewRouter()

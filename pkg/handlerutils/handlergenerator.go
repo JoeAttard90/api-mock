@@ -20,6 +20,7 @@ type HandlersGenerator struct {
 	GlobalSecurityScheme    string
 	StaticResponses         string
 	Methods                 map[string][]map[string]string
+	ServerAddr              string
 	doc                     *openapi3.T
 	handlerFuncTemplatePath string
 	handlerFuncOutputPath   string
@@ -36,7 +37,8 @@ func NewHandlersGenerator(
 	handlersOutputPath,
 	serverTemplatePath,
 	serverOutputPath,
-	staticResponses string,
+	staticResponses,
+	serverAddr string,
 ) *HandlersGenerator {
 	endpointsMap := make(map[string]string)
 	methodsMap := make(map[string][]map[string]string)
@@ -49,6 +51,7 @@ func NewHandlersGenerator(
 		handlersOutputPath:      handlersOutputPath,
 		serverTemplatePath:      serverTemplatePath,
 		serverOutputPath:        serverOutputPath,
+		ServerAddr:              serverAddr,
 		StaticResponses:         staticResponses,
 	}
 }

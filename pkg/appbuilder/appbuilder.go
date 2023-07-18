@@ -23,9 +23,7 @@ func NewBuilder(dirPath, modName, staticResponsePath string) *Builder {
 	}
 }
 
-const examplesDir = "exampledocs/staticresponses"
-
-func (b *Builder) ExecuteCommands(dockerRun bool) (string, error) {
+func (b *Builder) ExecuteCommands(dockerRun bool, examplesDir string) (string, error) {
 	dir := filepath.Join(b.dirPath, b.modName)
 	log.Printf("building the mock api in %s", dir)
 
@@ -71,7 +69,7 @@ func (b *Builder) ExecuteCommands(dockerRun bool) (string, error) {
 	goBuild.Dir = dir
 	_, err = goBuild.Output()
 	if err != nil {
-		return "", fmt.Errorf("failed to build the packages: %w", err)
+		return "", fmt.Errorf("failed to build the server: %w", err)
 	}
 
 	// Docker compose up

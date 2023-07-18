@@ -38,6 +38,7 @@ func main() {
 	// Builder
 	dirPath := flag.String("dirPath", "..", "the directory in which to generate the server")
 	modName := flag.String("modName", "api-mock-server", "the name of the go module being generated")
+	examplesDir := flag.String("examplesDir", "exampledocs/staticresponses", "the directory containing the static responses relative to the root of the mock api server")
 
 	flag.Parse()
 
@@ -59,6 +60,7 @@ func main() {
 		*serverTemplatePath,
 		*serverOutputPath,
 		*staticResponses,
+		*mockAPIPort,
 	)
 	dockerGenerator := dockerutils.NewDockerFileGenerator(
 		*mockAPIPort,
@@ -93,7 +95,7 @@ func main() {
 	}
 
 	// TODO: update the execute command to first check if the module exists, if so delete all then re-build
-	dir, err := builder.ExecuteCommands(*dockerRun)
+	dir, err := builder.ExecuteCommands(*dockerRun, *examplesDir)
 	if err != nil {
 		log.Printf("failed to execute commands during generation: %s", err.Error())
 		os.Exit(1)
