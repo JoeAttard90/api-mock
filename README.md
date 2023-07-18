@@ -6,7 +6,7 @@
 This application generates and stubs a server and handlers based on an OpenAPI 3.0 specification. The generated server will be dockerized and served on a specified port.
 
 ## Project Status
-Please be aware that this project is currently in early development stage and is a work in progress. While it can already be used to generate a server, handlers, and Docker files from an OpenAPI 3.0 spec, there are still many areas that need improvement and it may not cover all use cases or edge cases. There are likely to be bugs, incomplete features, incorrect documentation, or other discrepancies.
+Please be aware that this project is currently in early development stage and is a work in progress. While it can already be used to generate a server, handlers, and Docker files from an OpenAPI 3.0 spec, there are still many areas that need improvement and it may not cover all use cases or edge cases. There are likely to be bugs as well as incomplete features or other discrepancies.
 
 We welcome any contributions, suggestions, and feedback. If you encounter any problems or have any ideas for improvement, please feel free to open an issue or submit a pull request.
 
