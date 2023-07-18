@@ -31,6 +31,7 @@ The application uses the following program args/flags:
 - `mockAPIPort` - The port on which to expose the generated mock API
 - `dirPath` - The directory in which to generate the server
 - `modName` - The name of the Go module being generated
+- `examplesDir` - The directory containing the static responses _relative_ to the root of the mock api server
 
 ## Usage
 
