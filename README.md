@@ -43,10 +43,10 @@ go run main.go --openAPISpecPath=./your-spec-path.yaml
 
 Replace `your-spec-path.yaml` with the path to your OpenAPI 3.0 specification.
 
-## StaticResponses
+### StaticResponses
 
-You can utilise static files to serve up as responses, place them all in a single directory, and prefix the name of each 
-handler that will be used, with the method. eg. PostUser.json, GetUser.json 
+You can utilise static files to serve up as responses, place them all in a single directory, and prefix the name of each
+handler that will be used, with the method. eg. PostUser.json, GetUser.json
 
 ## Functionality
 
