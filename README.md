@@ -43,6 +43,11 @@ go run main.go --openAPISpecPath=./your-spec-path.yaml
 
 Replace `your-spec-path.yaml` with the path to your OpenAPI 3.0 specification.
 
+## StaticResponses
+
+You can utilise static files to serve up as responses, place them all in a single directory, and prefix the name of each 
+handler that will be used, with the method. eg. PostUser.json, GetUser.json 
+
 ## Functionality
 
 The application works as follows:
@@ -50,6 +55,6 @@ The application works as follows:
 1. Generates structs based on the OpenAPI 3.0 specification
 2. Generates handlers based on the OpenAPI 3.0 specification
 3. Generates a server that uses these handlers
-4. Generates a Dockerfile and a Docker Compose file
-5. Spins up the mock api server on the specified port
+4. Generates a Dockerfile and a Docker Compose file - If configured to do so
+5. Spins up the mock api server on the specified port - If configured to do so
 ---
